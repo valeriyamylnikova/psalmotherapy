@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Псалмотерапия</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F4EAD5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Псалмотерапия">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%23F4EAD5'/%3E%3Cg fill='none' stroke='%237A3F17' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M17 42h14M19 42C10 34 9 20 14 7M29 42c9-8 10-22 5-35M12.5 13h23M20 13v26M24 13v28M28 13v26'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4EAD5; --slip:#FBF4E4; --ink:#3A2A1C; --muted:#6B5540; --accent:#7A3F17;
+  --on-accent:#FFF8EA; --rule:#D2BD97; --dot:#D9C7A6; --edge:#B89F73;
+  --hand:'Caveat','Segoe Print','Bradley Hand',cursive;
+  --serif:'PT Serif',Georgia,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:16px;line-height:1.5}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:disabled{cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1:focus{outline:none}
+
+.page{max-width:460px;min-height:100vh;min-height:100dvh;margin:0 auto;display:flex;flex-direction:column;
+  padding:max(20px,env(safe-area-inset-top)) 28px max(28px,env(safe-area-inset-bottom))}
+
+/* шапка */
+.top{display:flex;align-items:center;justify-content:space-between;height:44px}
+.icon-btn{width:44px;height:44px;margin-left:-12px;padding:0;border:0;background:transparent;display:flex;align-items:center;justify-content:center}
+.top-title{font-size:15px;font-style:italic;color:var(--muted)}
+.top-count{width:44px;text-align:right;font-family:var(--hand);font-size:22px;font-weight:500;color:var(--muted)}
+.dots{display:flex;gap:10px;justify-content:center;margin-top:12px}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--dot)}
+.dots i.on{background:var(--accent)}
+
+/* вопрос */
+.ask{display:flex;flex-direction:column;gap:12px;margin-top:28px}
+.q{margin:0;font-family:var(--hand);font-weight:700;line-height:1.05;overflow-wrap:anywhere}
+.q-xl{font-size:56px;line-height:1}
+.q-l{font-size:44px}
+.q-m{font-size:38px}
+.q-s{font-size:32px;line-height:1.1}
+.helper{margin:0;font-style:italic;color:var(--muted)}
+.small{margin:10px 0 0;font-size:14px;font-style:italic;color:var(--muted)}
+.center{align-items:center;text-align:center}
+
+/* поле ответа на линованных строках */
+.field{display:flex;flex-direction:column;gap:6px;margin-top:24px}
+.field label,.legend{font-size:14px;color:var(--muted)}
+.lines{width:100%;padding:0 4px;border:0;border-radius:0;resize:none;background-color:transparent;
+  background-image:repeating-linear-gradient(transparent,transparent 35px,var(--rule) 35px,var(--rule) 36px);
+  background-attachment:local;font-family:var(--hand);font-size:27px;font-weight:500;line-height:36px;color:var(--ink)}
+.lines:focus-visible,.code:focus-visible{outline:1px dashed var(--accent);outline-offset:6px}
+.lines::placeholder,.code::placeholder{color:var(--muted);opacity:1}
+.code{width:100%;height:48px;padding:0 4px;border:0;border-bottom:1px solid var(--edge);border-radius:0;background:transparent;
+  font-family:var(--hand);font-size:28px;font-weight:500}
+.label-row{display:flex;align-items:center;gap:8px}
+
+/* картинка в пустом месте */
+.art{flex:1 0 auto;display:flex;align-items:center;justify-content:center;padding:16px 0;color:var(--accent)}
+.art svg{width:auto;height:160px}
+.art.big svg{height:210px}
+.art.top-art{flex:0 0 auto;padding:0}
+.spacer{flex:1 0 16px}
+@media (max-height:720px){.art svg{height:110px}.art.big svg{height:150px}}
+@media (max-height:600px){.art:not(.top-art){display:none}.art.top-art svg{height:90px}}
+
+/* кнопки */
+.actions{display:flex;flex-direction:column;gap:8px}
+.primary{min-height:56px;padding:8px 16px;border:0;border-radius:28px;background:var(--accent);color:var(--on-accent);
+  font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px}
+.primary:disabled{background:#B9A283;color:#3A2A1C}
+.outline{min-height:52px;padding:8px 16px;border:1px solid var(--accent);border-radius:26px;background:transparent;color:var(--accent);font-size:16px}
+.ghost{min-height:48px;padding:6px 12px;border:0;background:transparent;color:var(--accent);font-size:16px;font-style:italic;
+  display:flex;align-items:center;justify-content:center;gap:8px}
+.ghost span,.link{text-decoration:underline;text-underline-offset:4px}
+.ghost:disabled span{text-decoration:none}
+.link{padding:0;border:0;background:transparent;color:var(--accent);font-style:italic;min-height:44px}
+.note{margin:0;font-size:15px;color:var(--ink);background:var(--slip);border:1px dashed var(--edge);border-radius:6px;padding:10px 14px}
+
+/* листок со справкой и отрывком */
+.slip{margin-top:20px;padding:14px 18px;background:var(--slip);border:1px dashed var(--edge);border-radius:6px;transform:rotate(-.6deg)}
+.slip-title{margin:0 0 6px;font-size:14px;font-weight:700;color:var(--accent)}
+.slip p{margin:0;font-size:15px;line-height:1.55;white-space:pre-line}
+.passage{margin:0;padding:0 0 10px;border-bottom:1px solid var(--rule);font-size:14px;line-height:1.45;color:var(--muted);
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.passage b{color:var(--accent)}
+.sugs{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.sug{text-align:left;padding:12px 16px;background:var(--slip);border:1px dashed var(--edge);border-radius:6px;font-size:15px;line-height:1.5}
+.sug b{display:block;margin-bottom:2px;font-size:14px;color:var(--accent)}
+
+/* вход */
+.brand{margin:0;font-family:var(--hand);font-size:52px;line-height:1;font-weight:700}
+.home-head{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;margin-top:16px}
+.choice{margin:28px 0 0;padding:0;border:0;display:flex;flex-direction:column;min-width:0}
+.choice legend{padding:0;margin-bottom:4px}
+.choice label{display:flex;align-items:center;gap:12px;min-height:52px;border-bottom:1px solid var(--rule);font-size:17px;cursor:pointer}
+.choice input{width:20px;height:20px;margin:0;accent-color:var(--accent)}
+.saved{margin:24px 0 0;font-size:15px;color:var(--muted)}
+
+/* идеи в финале */
+.ideas{display:flex;flex-direction:column;margin-top:16px}
+.idea{min-height:54px;padding:6px 4px;border:0;border-bottom:1px solid var(--rule);background:transparent;font-size:17px;text-align:left;
+  display:flex;align-items:center;gap:14px}
+.idea svg{flex:none;color:var(--accent)}
+.idea .tick{margin-left:auto;visibility:hidden}
+.idea[aria-pressed="true"]{background:var(--slip);font-weight:700}
+.idea[aria-pressed="true"] .tick{visibility:visible}
+.idea.own{min-height:58px;font-family:var(--hand);font-size:28px;font-weight:700;color:var(--accent)}
+
+/* пауза: кнопка появляется не сразу */
+.wait{visibility:hidden;opacity:0;transition:opacity 1.2s ease}
+.wait.ready{visibility:visible;opacity:1}
+
+#toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);max-width:calc(100% - 40px);
+  padding:10px 18px;border-radius:22px;background:var(--ink);color:var(--paper);font-size:15px;opacity:0;pointer-events:none;transition:opacity .3s}
+#toast.show{opacity:1}
+
+/* живые картинки */
+@keyframes hum{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+@keyframes steam{0%{opacity:0;transform:translateY(2px)}40%{opacity:1}100%{opacity:0;transform:translateY(-2px)}}
+@keyframes sway{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-6deg)}}
+@keyframes flicker{0%,100%{transform:scale(1) rotate(-3deg)}35%{transform:scale(1.06,.94) rotate(3deg)}70%{transform:scale(.96,1.05) rotate(-1deg)}}
+@keyframes glow{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes breathe{0%,100%{transform:scale(.82);opacity:.55}50%{transform:scale(1.08);opacity:1}}
+.hum{animation:hum 2.4s ease-in-out infinite}
+.float{animation:float 3s ease-in-out infinite}
+.steam{animation:steam 2.8s ease-in-out infinite}
+.sway{animation:sway 3.6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+.flame{animation:flicker 1.9s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+.glow{animation:glow 2.6s ease-in-out infinite}
+.breathe{animation:breathe 8s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+@media (prefers-reduced-motion:reduce){
+  .hum,.float,.steam,.sway,.flame,.glow,.breathe{animation:none}
+  .wait{transition:none}
+}
+</style>
+</head>
+<body>
+<main id="app" class="page"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="padding:24px">Для упражнений нужен включённый JavaScript.</p></noscript>
+
+<script src="psalms.js"></script>
+<script src="exercises.js"></script>
+<script>
+(function () {
+'use strict';
+
+var APP = window.PSALM_APP;
+var PS = Array.isArray(window.PSALMS) ? window.PSALMS : [];
+var $app = document.getElementById('app');
+
+if (!APP) { $app.innerHTML = '<p>Не удалось загрузить упражнения. Обнови страницу.</p>'; return; }
+
+// ── хранение ──────────────────────────────────────────────────────────
+// Настройки (кодовое слово, порядок) — в памяти браузера надолго.
+// Ответы человека — только до закрытия вкладки, на сервер не сохраняются.
+function area(name) { try { return window[name]; } catch (e) { return null; } }
+function load(key, a) { try { return JSON.parse(area(a).getItem(key)); } catch (e) { return null; } }
+function keep(key, val, a) { try { area(a).setItem(key, JSON.stringify(val)); } catch (e) {} }
+
+var settings = Object.assign({ code: '', verified: false, order: 'order', done: [] }, load('psalm-settings', 'localStorage') || {});
+function saveSettings() { keep('psalm-settings', settings, 'localStorage'); }
+
+function fresh() {
+  return { started: false, home: true, view: 'step', ex: 0, step: 0, answers: {}, drafts: {},
+    fu: [], fuQ: null, fuDone: false, ref: null, refText: '', refAsk: null, sug: null,
+    hints: {}, ideasOpen: false, ideas: null, idea: null, crisisShown: false, noAi: false };
+}
+var S = Object.assign(fresh(), load('psalm-state', 'sessionStorage') || {});
+if (!APP.exercises[S.ex]) S = fresh();
+function save() { keep('psalm-state', S, 'sessionStorage'); }
+
+// то, что не сохраняется
+var busy = null;        // 'start' | 'next' | 'hint'
+var note = '';          // короткое сообщение над кнопками
+var offerNoAi = false;
+var codeDraft = settings.code || '';
+var pauseTimer = null;
+var toastTimer = null;
+var lastScreen = '';
+
+// ── мелочи ────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function ex() { return APP.exercises[S.ex]; }
+function step() { return ex().steps[S.step]; }
+function draftKey() { var st = step(); return st.kind === 'feel' && S.fuQ ? 'feel#' + S.fu.length : st.id; }
+function draft() { return S.drafts[draftKey()] || ''; }
+function aiOn() { return !S.noAi && settings.code && settings.verified; }
+function rnd(n) { return Math.floor(Math.random() * n); }
+function toast(text) {
+  var el = document.getElementById('toast');
+  el.textContent = text; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2800);
+}
+function refLabel(r) { return 'Псалом ' + r.psalm + ':' + r.from + (r.to > r.from ? '–' + r.to : ''); }
+function refText(r) { return (PS[r.psalm - 1] || []).slice(r.from - 1, r.to).join(' '); }
+
+// ── запросы к помощнику ───────────────────────────────────────────────
+function ai(task, data) {
+  var ctrl = new AbortController();
+  var timer = setTimeout(function () { ctrl.abort(); }, 45000);
+  return fetch(APP.proxy, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: settings.code, task: task, data: data || {} }),
+    signal: ctrl.signal
+  }).then(function (r) {
+    return r.json().catch(function () { return {}; }).then(function (j) {
+      if (!r.ok) {
+        var e = new Error(j.error || 'ошибка'); e.status = r.status;
+        if (r.status === 403) { settings.verified = false; saveSettings(); }
+        throw e;
+      }
+      return j;
+    });
+  }).finally(function () { clearTimeout(timer); });
+}
+function parseJson(text) {
+  var m = String(text || '').match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try { return JSON.parse(m[0]); } catch (e) { return null; }
+}
+
+// ── поиск отрывка в Псалтири по словам человека ───────────────────────
+var stemCache = null;
+function stems(text) {
+  var out = {};
+  String(text).toLowerCase().replace(/ё/g, 'е').split(/[^а-я]+/).forEach(function (w) {
+    if (w.length >= 4) out[w.slice(0, 4)] = 1;
+  });
+  return out;
+}
+function identify(text) {
+  if (!PS.length) return null;
+  var mine = Object.keys(stems(text));
+  if (mine.length < 3) return null;
+  if (!stemCache) stemCache = PS.map(function (c) { return c.map(stems); });
+  var best = null;
+  for (var p = 0; p < stemCache.length; p++) {
+    var ch = stemCache[p];
+    for (var v = 0; v < ch.length; v++) {
+      for (var w = 1; w <= 3 && v + w <= ch.length; w++) {
+        var hit = 0;
+        for (var i = 0; i < mine.length; i++) {
+          for (var k = 0; k < w; k++) { if (ch[v + k][mine[i]]) { hit++; break; } }
+        }
+        var score = hit / mine.length;
+        if (hit >= 3 && score >= 0.6 && (!best || score > best.score + 1e-9)) {
+          best = { psalm: p + 1, from: v + 1, to: v + w, score: score };
+        }
+      }
+    }
+  }
+  return best ? { psalm: best.psalm, from: best.from, to: best.to } : null;
+}
+function passageData() {
+  if (S.ref) {
+    var ch = PS[S.ref.psalm - 1] || [];
+    return { psalm: S.ref.psalm, from: S.ref.from, to: S.ref.to, text: refText(S.ref), opening: ch.slice(0, 2).join(' ') };
+  }
+  return { text: S.answers.psalm || '' };
+}
+
+// Слова, после которых упражнение останавливается и зовёт к живым людям
+var DANGER = /(суицид|самоубий|покончить с собой|покончу с собой|не хочу жить|не хочется жить|жить не хочется|убить себя|убью себя|сч[её]ты с жизнью|наложить на себя руки|хочу умереть|лучше бы меня не было)/i;
+
+// ── картинки ──────────────────────────────────────────────────────────
+function svg(box, body, extra) {
+  return '<svg viewBox="0 0 ' + box + ' ' + box + '" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ' + (extra || '') + '>' + body + '</svg>';
+}
+var ART = {
+  lyre: function () { return svg(48, '<path d="M17 42h14"/><path d="M19 42C10 34 9 20 14 7"/><path d="M29 42c9-8 10-22 5-35"/><path d="M14 7c-2.5-1-4.5 1-3.5 3"/><path d="M34 7c2.5-1 4.5 1 3.5 3"/><path d="M12.5 13h23"/>' +
+    '<path class="hum" d="M18 13v24.5"/><path class="hum" style="animation-delay:.3s" d="M21 13v27"/><path class="hum" style="animation-delay:.6s" d="M24 13v28.5"/><path class="hum" style="animation-delay:.9s" d="M27 13v27"/><path class="hum" style="animation-delay:1.2s" d="M30 13v24.5"/>' +
+    '<g class="float"><path d="M41.5 24v-6l3.5-1v6"/><circle cx="40.3" cy="24" r="1.2"/><circle cx="43.8" cy="23" r="1.2"/></g>', 'stroke-width=".9"'); },
+  cup: function () { return svg(48, '<path d="M10 22h22v6a10 10 0 0 1-10 10h-2a10 10 0 0 1-10-10z"/><path d="M32 24h3a4.5 4.5 0 0 1 0 9h-3.6"/><path d="M7 42h28"/>' +
+    '<path class="steam" d="M15 8c-2 2.6 2 4.4 0 7.2"/><path class="steam" style="animation-delay:.7s" d="M21 5c-2 3 2 5 0 8.5"/><path class="steam" style="animation-delay:1.4s" d="M27 8c-2 2.6 2 4.4 0 7.2"/>', 'stroke-width=".9"'); },
+  sprig: function () { return svg(48, '<path d="M14 44h20"/><g class="sway"><path d="M24 44V16"/><path d="M24 35c-6 0-10-4-10-10 6 0 10 4 10 10z"/><path d="M24 29c0-6 4-10 10-10 0 6-4 10-10 10z"/><path d="M24 21c-4.5 0-7.5-3-7.5-7.5 4.5 0 7.5 3 7.5 7.5z"/><path d="M24 16c0-4 2.5-7 6-8 0 4.5-2.5 7.5-6 8z"/></g>', 'stroke-width=".9"'); },
+  book: function () { return svg(48, '<path d="M24 16c-4-3-10-4-17-3v24c7-1 13 0 17 3 4-3 10-4 17-3V13c-7-1-13 0-17 3z"/><path d="M24 16v24"/><path d="M11 19.5c3-.3 6 .2 9 1.4"/><path d="M11 24.5c3-.3 6 .2 9 1.4"/><path d="M11 29.5c3-.3 6 .2 9 1.4"/><path d="M37 19.5c-3-.3-6 .2-9 1.4"/><path d="M37 24.5c-3-.3-6 .2-9 1.4"/>' +
+    '<g class="sway"><path d="M24 16V6"/><path d="M24 12c-3 0-5-2-5-5 3 0 5 2 5 5z"/><path d="M24 9.5c0-3 2-5 5-5 0 3-2 5-5 5z"/></g>', 'stroke-width=".9"'); },
+  sun: function () { return svg(48, '<path d="M5 34h38"/><path d="M13 34a11 11 0 0 1 22 0"/><path d="M13 39h22"/><path d="M19 43.5h10"/>' +
+    '<path class="glow" d="M24 17v-6"/><path class="glow" style="animation-delay:.4s" d="M12.5 22.5l-4-4"/><path class="glow" style="animation-delay:.8s" d="M35.5 22.5l4-4"/><path class="glow" style="animation-delay:1.2s" d="M8.5 29.5L3.5 28"/><path class="glow" style="animation-delay:1.6s" d="M39.5 29.5l5-1.5"/>', 'stroke-width=".9"'); },
+  candle: function () { return svg(48, '<g class="flame"><path d="M24 4c3.4 4.2 4.8 7 4.8 9.6a4.8 4.8 0 0 1-9.6 0c0-2.6 1.4-5.4 4.8-9.6z"/><path d="M24 11c1.2 1.5 1.6 2.4 1.6 3.2a1.6 1.6 0 0 1-3.2 0c0-.8.4-1.7 1.6-3.2z"/></g>' +
+    '<path class="glow" d="M13 9l-3-1.5"/><path class="glow" style="animation-delay:.4s" d="M35 9l3-1.5"/><path class="glow" style="animation-delay:.8s" d="M11.5 15H8"/><path class="glow" style="animation-delay:1.2s" d="M36.5 15H40"/>' +
+    '<path d="M24 22v-3.4"/><path d="M18.5 22h11v18h-11z"/><path d="M21.5 22v4.5a1.2 1.2 0 0 0 2.4 0V22"/><path d="M12 40h24"/><path d="M15 40c0 3 4 4 9 4s9-1 9-4"/>', 'stroke-width=".9"'); },
+  breathe: function () { return svg(48, '<circle class="breathe" cx="24" cy="24" r="20"/><circle class="breathe" style="animation-delay:.6s" cx="24" cy="24" r="13"/><path d="M24 31v-9"/><path d="M24 26.5c-2.6 0-4.2-1.6-4.2-4.2 2.6 0 4.2 1.6 4.2 4.2z"/><path d="M24 23c0-2.6 1.6-4.2 4.2-4.2 0 2.6-1.6 4.2-4.2 4.2z"/>', 'stroke-width=".9"'); }
+};
+function ic(name, size) {
+  var s = 'width="' + (size || 24) + '" height="' + (size || 24) + '" stroke-width="1.5"';
+  var d = {
+    back: '<path d="M15 5l-7 7 7 7"/>',
+    next: '<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
+    key: '<circle cx="8" cy="16" r="4"/><path d="M11 13l9-9"/><path d="M17 7l2.5 2.5"/><path d="M14.5 9.5l2 2"/>',
+    sprig: '<path d="M12 21V9"/><path d="M12 14c-3.2 0-5.2-2-5.2-5.2 3.2 0 5.2 2 5.2 5.2z"/><path d="M12 10c0-3.2 2-5.2 5.2-5.2 0 3.2-2 5.2-5.2 5.2z"/>',
+    refresh: '<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5"/><path d="M20 4v4.5h-4.5"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5"/><path d="M4 20v-4.5h4.5"/>',
+    tick: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    pencil: '<path d="M4 20l1-4.5L16.5 4a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M14.5 6l3 3"/>',
+    candle: '<path d="M12 2.5c1.7 2.1 2.4 3.5 2.4 4.8a2.4 2.4 0 0 1-4.8 0c0-1.3.7-2.7 2.4-4.8z"/><path d="M12 11.5v-1.6"/><path d="M9.2 11.5h5.6v9H9.2z"/><path d="M6.5 20.5h11"/>',
+    wind: '<path d="M3.5 9h10a2.8 2.8 0 1 0-2.8-2.8"/><path d="M3.5 13h15a2.8 2.8 0 1 1-2.8 2.8"/><path d="M3.5 17h6"/>',
+    moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>',
+    quill: '<path d="M20.2 3.8C13.5 4 8.4 7.8 7 14.2"/><path d="M7 14.2c5.6.4 11-3 13.2-10.4"/><path d="M3.8 20.2l9.2-9.6"/>',
+    people: '<circle cx="9" cy="8" r="3"/><path d="M3.5 19.5c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"/><circle cx="17" cy="9" r="2.4"/><path d="M16.2 14.3c2.5.3 4.3 2.2 4.3 5.2"/>'
+  }[name] || '';
+  return svg(24, d, s);
+}
+function art(name, cls) { return '<div class="art ' + (cls || '') + '">' + (ART[name] ? ART[name]() : '') + '</div>'; }
+
+// ── общие куски экрана ────────────────────────────────────────────────
+function topBar() {
+  var n = ex().steps.length, dots = '';
+  for (var i = 0; i < n; i++) dots += '<i' + (i <= S.step ? ' class="on"' : '') + '></i>';
+  return '<header class="top"><button type="button" class="icon-btn" data-act="back" aria-label="Назад">' + ic('back') + '</button>' +
+    '<div class="top-title">' + esc(ex().title) + '</div>' +
+    '<div class="top-count" aria-label="Шаг ' + (S.step + 1) + ' из ' + n + '">' + (S.step + 1) + ' / ' + n + '</div></header>' +
+    '<div class="dots" aria-hidden="true">' + dots + '</div>';
+}
+function qClass(text) {
+  var n = String(text).length;
+  return n <= 12 ? 'q-xl' : n <= 50 ? 'q-l' : n <= 72 ? 'q-m' : 'q-s';
+}
+function noteHtml() { return note ? '<p class="note" role="status">' + esc(note) + '</p>' : ''; }
+function nextBtn(label, disabled) {
+  var wait = busy === 'next';
+  return '<button type="button" class="primary" data-act="next"' + (disabled || wait ? ' disabled' : '') + (wait ? ' aria-busy="true"' : '') + '>' +
+    '<span>' + (wait ? 'Думаю…' : esc(label || 'Дальше')) + '</span>' + (wait ? '' : ic('next', 20)) + '</button>';
+}
+function passageNote() {
+  var text = S.ref ? refText(S.ref) : (S.answers.psalm || '');
+  if (!text) return '';
+  return '<p class="passage"><b>' + esc(S.ref ? refLabel(S.ref) : 'Твой отрывок') + '.</b> ' + esc(text) + '</p>';
+}
+
+// ── экраны ────────────────────────────────────────────────────────────
+function viewHome() {
+  var known = settings.code && settings.verified;
+  var codeBlock = known
+    ? '<p class="saved">Кодовое слово сохранено. <button type="button" class="link" data-act="change-code">Сменить</button></p>'
+    : '<div class="field" style="margin-top:32px"><div class="label-row" style="color:var(--accent)">' + ic('key', 20) +
+      '<label for="code">Кодовое слово группы</label></div>' +
+      '<input id="code" class="code" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" value="' + esc(codeDraft) + '"></div>';
+  var order = '<fieldset class="choice"><legend class="legend">Как показывать упражнения?</legend>' +
+    '<label><input type="radio" name="order" value="order"' + (settings.order === 'order' ? ' checked' : '') + '><span>По порядку</span></label>' +
+    '<label><input type="radio" name="order" value="random"' + (settings.order === 'random' ? ' checked' : '') + '><span>Случайно</span></label></fieldset>';
+  var wait = busy === 'start';
+  var buttons = S.started
+    ? '<button type="button" class="primary" data-act="start"' + (wait ? ' disabled' : '') + '><span>' + (wait ? 'Проверяю…' : 'Продолжить упражнение') + '</span>' + (wait ? '' : ic('next', 20)) + '</button>' +
+      '<button type="button" class="ghost" data-act="restart"><span>Начать заново</span></button>'
+    : '<button type="button" class="primary" data-act="start"' + (wait ? ' disabled' : '') + '><span>' + (wait ? 'Проверяю…' : 'Начать') + '</span>' + (wait ? '' : ic('next', 20)) + '</button>';
+  return '<div class="home-head">' + art('lyre', 'top-art') +
+    '<h1 class="brand" tabindex="-1">Псалмотерапия</h1><p class="helper">Упражнения к занятиям курса</p></div>' +
+    codeBlock + order +
+    '<p class="small">Выбор можно поменять в любой момент.</p>' +
+    '<p class="small">Твои ответы читает ИИ-помощник. Мы их не сохраняем.</p>' +
+    '<div class="spacer"></div><div class="actions">' + noteHtml() +
+    (offerNoAi ? '<button type="button" class="ghost" data-act="no-ai"><span>Пройти без помощника</span></button>' : '') +
+    buttons + '</div>';
+}
+
+function viewStep() {
+  var st = step();
+  if (st.kind === 'final') return viewFinal(st);
+  if (st.kind === 'psalm' && S.refAsk) return viewConfirm(st);
+
+  var title = st.kind === 'feel' && S.fuQ ? S.fuQ : st.title;
+  var helper = st.kind === 'feel' && S.fuQ ? '' : st.helper;
+  var val = draft();
+  var rows = st.rows || 4;
+  var html = topBar() + '<section class="ask">' +
+    (st.kind === 'ask' ? passageNote() : '') +
+    '<h1 class="q ' + qClass(title) + '" tabindex="-1">' + esc(title) + '</h1>' +
+    (helper ? '<p class="helper">' + esc(helper) + '</p>' : '') + '</section>';
+
+  if (st.kind === 'ask' && S.hints[st.id]) {
+    html += '<div class="slip"><p class="slip-title">Немного контекста</p><p>' + esc(S.hints[st.id]) + '</p></div>';
+  }
+  if (st.kind === 'psalm' && S.sug) {
+    html += '<div class="sugs" role="group" aria-label="Отрывки на выбор">' + S.sug.map(function (r, i) {
+      return '<button type="button" class="sug" data-act="pick-sug" data-i="' + i + '"><b>' + esc(refLabel(r)) + '</b>' + esc(refText(r)) + '</button>';
+    }).join('') + '</div>';
+  }
+
+  html += '<div class="field"><label for="answer">' + esc(st.label || 'Твой ответ') + '</label>' +
+    '<textarea id="answer" class="lines" rows="' + rows + '" style="height:' + rows * 36 + 'px"' +
+    (st.placeholder && !S.fuQ ? ' placeholder="' + esc(st.placeholder) + '"' : '') + '>' + esc(val) + '</textarea>' +
+    (st.kind === 'psalm' && S.ref && S.refText === val.trim() && val.trim() ? '<p class="small" style="margin:0">' + esc(refLabel(S.ref)) + '</p>' : '') +
+    '</div>';
+
+  html += art(st.art);
+
+  var hintBtn = '';
+  var canHint = st.hintLabel && ((st.kind === 'psalm' && !S.sug) || (st.kind === 'ask' && !S.hints[st.id]));
+  if (canHint) {
+    var hw = busy === 'hint';
+    hintBtn = '<button type="button" class="ghost" data-act="hint"' + (hw ? ' disabled aria-busy="true"' : '') + '>' + ic('sprig', 20) +
+      '<span>' + (hw ? 'Ищу…' : esc(st.hintLabel)) + '</span></button>';
+  }
+  html += '<div class="actions">' + noteHtml() + hintBtn + nextBtn('Дальше', st.required && !val.trim()) + '</div>';
+  return html;
+}
+
+function viewConfirm(st) {
+  var r = S.refAsk;
+  return topBar() + '<section class="ask"><h1 class="q q-l" tabindex="-1">Похоже, это ' + esc(refLabel(r)) + '</h1>' +
+    '<p class="helper">Так этот отрывок звучит в Синодальном переводе.</p></section>' +
+    '<div class="slip"><p class="slip-title">' + esc(refLabel(r)) + '</p><p>' + esc(refText(r)) + '</p></div>' +
+    art(st.art) +
+    '<div class="actions"><button type="button" class="outline" data-act="ref-no">Нет, другой</button>' +
+    '<button type="button" class="primary" data-act="ref-yes"><span>Да, это он</span>' + ic('next', 20) + '</button></div>';
+}
+
+function viewPause() {
+  var p = APP.pauses[S.step % APP.pauses.length];
+  return topBar() + '<section class="ask center" style="margin-top:36px">' + art('breathe', 'top-art big') +
+    '<h1 class="q ' + qClass(p.title) + '" tabindex="-1">' + esc(p.title) + '</h1>' +
+    (p.helper ? '<p class="helper">' + esc(p.helper) + '</p>' : '') + '</section>' +
+    '<div class="spacer"></div><div class="actions"><button type="button" class="outline wait" id="go" data-act="go">Иду дальше</button></div>';
+}
+
+function viewFinal(st) {
+  var foot = '<button type="button" class="outline" data-act="copy">Скопировать себе запись</button>' +
+    '<button type="button" class="primary" data-act="finish"><span>Закончить</span></button>';
+  if (!S.ideasOpen) {
+    return topBar() + '<section class="ask center">' + art(st.art, 'top-art') +
+      '<p class="helper" style="font-size:17px">' + esc(st.lead) + '</p>' +
+      '<h1 class="q ' + qClass(st.title) + '" tabindex="-1">' + esc(st.title) + '</h1></section>' +
+      '<div class="spacer"></div><div class="actions">' +
+      '<button type="button" class="ghost" data-act="ideas-open">' + ic('sprig', 20) + '<span>' + esc(st.hintLabel) + '</span></button>' + foot + '</div>';
+  }
+  var rows = (S.ideas || []).map(function (it, i) {
+    var on = S.idea === it.text;
+    return '<button type="button" class="idea" data-act="idea" data-i="' + i + '" aria-pressed="' + on + '">' + ic(it.icon, 26) +
+      '<span>' + esc(it.text) + '</span><span class="tick">' + ic('tick', 22) + '</span></button>';
+  }).join('');
+  var ownOn = S.idea === APP.ownIdea;
+  rows += '<button type="button" class="idea own" data-act="idea-own" aria-pressed="' + ownOn + '">' + ic('pencil', 26) +
+    '<span>' + esc(APP.ownIdea) + '</span><span class="tick">' + ic('tick', 22) + '</span></button>';
+  return topBar() + '<section class="ask"><h1 class="q q-l" tabindex="-1">' + esc(st.ideasTitle) + '</h1>' +
+    '<p class="helper">' + esc(st.ideasHelper) + '</p></section>' +
+    '<div class="ideas">' + rows + '</div>' +
+    '<button type="button" class="ghost" data-act="ideas-more" style="margin-top:8px">' + ic('refresh', 18) + '<span>Показать другие идеи</span></button>' +
+    '<div class="spacer"></div><div class="actions">' + foot + '</div>';
+}
+
+function viewCrisis() {
+  return topBar() + '<section class="ask" style="margin-top:36px"><h1 class="q q-l" tabindex="-1">То, о чём ты пишешь, очень важно</h1></section>' +
+    '<div class="slip"><p>С этим не стоит оставаться наедине. Пожалуйста, поговори сегодня с ведущим курса или с близким человеком, которому доверяешь.</p></div>' +
+    '<p style="margin:20px 0 0">Если тебе или кому-то рядом прямо сейчас угрожает опасность, позвони <a href="tel:112" style="color:var(--accent);font-weight:700">112</a>.</p>' +
+    '<div class="spacer"></div><div class="actions"><button type="button" class="outline" data-act="crisis-go">Вернуться к упражнению</button></div>';
+}
+
+function render() {
+  clearTimeout(pauseTimer);
+  var screen, html;
+  if (S.home || !S.started) { screen = 'home'; html = viewHome(); }
+  else if (S.view === 'pause') { screen = 'pause' + S.step; html = viewPause(); }
+  else if (S.view === 'crisis') { screen = 'crisis'; html = viewCrisis(); }
+  else { screen = 'step' + S.step + (S.fuQ ? 'f' + S.fu.length : '') + (S.refAsk ? 'c' : '') + (S.ideasOpen ? 'i' : ''); html = viewStep(); }
+
+  var keepFocus = screen === lastScreen && document.activeElement && document.activeElement.id;
+  $app.innerHTML = html;
+  if (screen !== lastScreen) {
+    window.scrollTo(0, 0);
+    var h = $app.querySelector('h1');
+    if (h && lastScreen) { try { h.focus({ preventScroll: true }); } catch (e) {} }
+  } else if (keepFocus) {
+    var el = document.getElementById(keepFocus);
+    if (el) { try { el.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  lastScreen = screen;
+
+  if (screen.indexOf('pause') === 0) {
+    pauseTimer = setTimeout(function () {
+      var go = document.getElementById('go');
+      if (go) go.classList.add('ready');
+    }, Math.max(0, Number(APP.pauseSeconds) || 0) * 1000);
+  }
+  save();
+}
+
+// ── ход упражнения ────────────────────────────────────────────────────
+function goPause() { S.view = 'pause'; S.fuQ = null; note = ''; busy = null; render(); }
+function goStep(n) { S.step = n; S.view = 'step'; S.refAsk = null; note = ''; busy = null; render(); }
+
+function pickExercise() {
+  var list = APP.exercises;
+  if (settings.order === 'random') return rnd(list.length);
+  for (var i = 0; i < list.length; i++) if (settings.done.indexOf(list[i].id) < 0) return i;
+  return 0;
+}
+function begin() {
+  if (!S.started) { var noAi = S.noAi; S = fresh(); S.noAi = noAi; S.ex = pickExercise(); S.started = true; }
+  S.home = false; note = ''; offerNoAi = false; busy = null;
+  render();
+}
+function start() {
+  var input = document.getElementById('code');
+  if (input) { codeDraft = input.value; settings.code = input.value.trim(); }
+  if (S.noAi || (settings.code && settings.verified)) { saveSettings(); return begin(); }
+  if (!settings.code) { note = 'Впиши кодовое слово группы.'; render(); if (document.getElementById('code')) document.getElementById('code').focus(); return; }
+  busy = 'start'; note = ''; render();
+  ai('check').then(function () {
+    settings.verified = true; saveSettings(); begin();
+  }).catch(function (e) {
+    busy = null;
+    if (e.status === 403) { note = 'Кодовое слово не подошло. Проверь, как оно написано.'; offerNoAi = false; }
+    else if (e.status === 429) { note = 'Слишком много попыток. Подожди несколько минут и попробуй снова.'; offerNoAi = false; }
+    else { note = 'Не получилось связаться с помощником. Проверь интернет и попробуй ещё раз.'; offerNoAi = true; }
+    render();
+  });
+}
+
+// pending — только что данный ответ на уточняющий вопрос ({q, a}) или null после главного вопроса.
+// Пока помощник думает, на экране остаётся тот же вопрос с тем же ответом.
+function askFollowup(pending) {
+  var st = step();
+  var commit = function () { if (pending) { S.fu.push(pending); pending = null; } S.fuQ = null; };
+  if (!aiOn() || S.fu.length + (pending ? 1 : 0) >= (st.followups || 0)) { commit(); S.fuDone = true; return goPause(); }
+  var talk = [{ q: st.title, a: S.answers.feel }].concat(S.fu, pending ? [pending] : []);
+  busy = 'next'; render();
+  ai('followup', { answers: talk }).then(function (r) {
+    var j = parseJson(r.text) || {};
+    busy = null; commit();
+    if (j.crisis === true && !S.crisisShown) { S.fuDone = true; S.crisisShown = true; S.view = 'crisis'; return render(); }
+    var q = String(j.question || '').replace(/\s+/g, ' ').trim().slice(0, 220);
+    if (!q) { S.fuDone = true; return goPause(); }
+    S.fuQ = q; render();
+  }).catch(function () { commit(); S.fuDone = true; goPause(); });
+}
+
+function next() {
+  if (busy) return;
+  var st = step();
+  var ta = document.getElementById('answer');
+  var text = ta ? ta.value.trim() : '';
+  if (st.required && !text) return;
+  note = '';
+
+  if (st.kind === 'feel') {
+    if (DANGER.test(text) && !S.crisisShown) {
+      if (S.fuQ) S.fu.push({ q: S.fuQ, a: text }); else S.answers.feel = text;
+      S.fuQ = null; S.fuDone = true; S.crisisShown = true; S.view = 'crisis';
+      return render();
+    }
+    if (S.fuQ) return askFollowup({ q: S.fuQ, a: text });
+    if (S.fuDone && S.answers.feel === text) return goPause();
+    S.answers.feel = text; S.fu = []; S.fuDone = false;
+    return askFollowup(null);
+  }
+  if (st.kind === 'psalm') {
+    S.answers.psalm = text;
+    if (S.ref && S.refText === text) return goPause();
+    var found = identify(text);
+    S.ref = null; S.refText = '';
+    if (found) { S.refAsk = found; return render(); }
+    return goPause();
+  }
+  S.answers[st.id] = text;
+  goPause();
+}
+
+function validRefs(items) {
+  var out = [], seen = {};
+  (Array.isArray(items) ? items : []).forEach(function (it) {
+    var p = Number(it && it.psalm), a = Number(it && it.from), b = Number(it && it.to);
+    var ch = PS[p - 1];
+    if (!ch || !Number.isInteger(a) || a < 1 || a > ch.length) return;
+    if (!Number.isInteger(b) || b < a) b = a;
+    b = Math.min(b, ch.length, a + 3);
+    if (seen[p]) return;
+    seen[p] = 1; out.push({ psalm: p, from: a, to: b });
+  });
+  return out.slice(0, 3);
+}
+function fallbackRefs() {
+  var pool = (APP.fallbackPassages || []).slice(), out = [];
+  while (pool.length && out.length < 3) {
+    var x = pool.splice(rnd(pool.length), 1)[0];
+    out = out.concat(validRefs([{ psalm: x[0], from: x[1], to: x[2] }]));
+  }
+  return out;
+}
+function hint() {
+  if (busy) return;
+  var st = step();
+  var ta = document.getElementById('answer');
+  if (ta) S.drafts[draftKey()] = ta.value;
+  note = '';
+
+  if (st.kind === 'psalm') {
+    var showSug = function (list) {
+      busy = null;
+      if (!list.length) list = fallbackRefs();
+      if (!list.length) { note = 'Не получилось подобрать. Попробуй вспомнить любую строчку, подойдёт и неточная.'; return render(); }
+      S.sug = list; render();
+    };
+    if (!aiOn() || !PS.length) return showSug([]);
+    busy = 'hint'; render();
+    ai('suggest', { answers: feelTalk0() }).then(function (r) {
+      showSug(validRefs((parseJson(r.text) || {}).items));
+    }).catch(function () { showSug([]); });
+    return;
+  }
+
+  if (!aiOn()) { note = 'Помощник сейчас недоступен. Ответь своими словами или просто иди дальше.'; return render(); }
+  busy = 'hint'; render();
+  ai('hint', { step: st.hint, passage: passageData() }).then(function (r) {
+    busy = null;
+    var t = String(r.text || '').trim().slice(0, 1200);
+    if (t) S.hints[st.id] = t; else note = 'Помощник не ответил. Ответь своими словами или просто иди дальше.';
+    render();
+  }).catch(function () {
+    busy = null; note = 'Помощник сейчас недоступен. Ответь своими словами или просто иди дальше.'; render();
+  });
+}
+function feelTalk0() {
+  var first = ex().steps.filter(function (s) { return s.kind === 'feel'; })[0];
+  var list = S.answers.feel ? [{ q: first ? first.title : 'Как дела?', a: S.answers.feel }].concat(S.fu) : [];
+  return list.length ? list : [{ q: 'Как дела?', a: 'не знаю, с чего начать' }];
+}
+
+function rollIdeas() {
+  var prev = (S.ideas || []).map(function (x) { return x.text; });
+  S.ideas = APP.ideas.map(function (g) {
+    var pool = g.items.filter(function (t) { return prev.indexOf(t) < 0; });
+    if (!pool.length) pool = g.items;
+    return { icon: g.icon, text: pool[rnd(pool.length)] };
+  });
+}
+
+function record() {
+  var e = ex(), lines = [];
+  var d = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  lines.push('Псалмотерапия. ' + e.title + '. ' + d, '');
+  e.steps.forEach(function (st) {
+    if (st.kind === 'final') {
+      if (S.idea) lines.push(st.ideasTitle, S.idea, '');
+      return;
+    }
+    var a = S.answers[st.id];
+    if (!a) return;
+    lines.push(st.title, a);
+    if (st.kind === 'feel') S.fu.forEach(function (x) { lines.push('', x.q, x.a); });
+    if (st.kind === 'psalm' && S.ref) lines.push('(' + refLabel(S.ref) + ')');
+    lines.push('');
+  });
+  return lines.join('\n').trim();
+}
+function copyRecord() {
+  var text = record();
+  var done = function () { toast('Запись скопирована. Вставь её в свои заметки.'); };
+  var old = function () {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    if (ok) done(); else toast('Не получилось скопировать.');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, old);
+  else old();
+}
+
+function back() {
+  if (busy) return;
+  note = '';
+  if (S.view === 'crisis') { S.view = 'step'; return render(); }
+  if (S.view === 'pause') { S.view = 'step'; return render(); }
+  var st = step();
+  var ta = document.getElementById('answer');
+  if (ta) S.drafts[draftKey()] = ta.value;
+  if (st.kind === 'psalm' && S.refAsk) { S.refAsk = null; return render(); }
+  if (st.kind === 'final' && S.ideasOpen) { S.ideasOpen = false; return render(); }
+  if (st.kind === 'feel' && S.fuQ) { S.fuQ = null; S.fu = []; S.fuDone = false; return render(); }
+  if (S.step === 0) { S.home = true; return render(); }
+  goStep(S.step - 1);
+}
+
+var ACTS = {
+  start: start,
+  restart: function () { var noAi = S.noAi; S = fresh(); S.noAi = noAi; start(); },
+  'no-ai': function () { S.noAi = true; begin(); },
+  'change-code': function () { settings.code = ''; settings.verified = false; codeDraft = ''; saveSettings(); render(); },
+  back: back,
+  next: next,
+  hint: hint,
+  'pick-sug': function (el) {
+    var r = S.sug && S.sug[Number(el.getAttribute('data-i'))];
+    if (!r) return;
+    S.ref = r; S.refText = refText(r); S.drafts[draftKey()] = S.refText; S.sug = null; render();
+  },
+  'ref-yes': function () { S.ref = S.refAsk; S.refText = S.answers.psalm; S.refAsk = null; goPause(); },
+  'ref-no': function () { S.ref = null; S.refAsk = null; goPause(); },
+  go: function () { if (S.step < ex().steps.length - 1) goStep(S.step + 1); },
+  'crisis-go': function () { goPause(); },
+  'ideas-open': function () { if (!S.ideas) rollIdeas(); S.ideasOpen = true; render(); },
+  'ideas-more': function () { rollIdeas(); render(); },
+  idea: function (el) { var it = S.ideas && S.ideas[Number(el.getAttribute('data-i'))]; if (it) { S.idea = S.idea === it.text ? null : it.text; render(); } },
+  'idea-own': function () { S.idea = S.idea === APP.ownIdea ? null : APP.ownIdea; render(); },
+  copy: copyRecord,
+  finish: function () {
+    var id = ex().id;
+    if (settings.done.indexOf(id) < 0) settings.done.push(id);
+    if (settings.done.length >= APP.exercises.length) settings.done = [];
+    saveSettings();
+    var noAi = S.noAi; S = fresh(); S.noAi = noAi;
+    render(); toast('Упражнение закончено.');
+  }
+};
+
+$app.addEventListener('click', function (ev) {
+  var el = ev.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  var fn = ACTS[el.getAttribute('data-act')];
+  if (fn) fn(el);
+});
+$app.addEventListener('input', function (ev) {
+  var t = ev.target;
+  if (t.id === 'answer') {
+    S.drafts[draftKey()] = t.value; save();
+    var btn = $app.querySelector('[data-act="next"]');
+    if (btn && step().required && !busy) btn.disabled = !t.value.trim();
+  } else if (t.id === 'code') {
+    codeDraft = t.value;
+  }
+});
+$app.addEventListener('change', function (ev) {
+  if (ev.target.name === 'order') { settings.order = ev.target.value; saveSettings(); }
+});
+$app.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Enter' && ev.target.id === 'code') { ev.preventDefault(); start(); }
+});
+
+render();
+})();
+</script>
+</body>
+</html>

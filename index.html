@@ -246,28 +246,67 @@ function stems(text) {
   });
   return out;
 }
+// Слова, по которым отрывок не узнать: они есть почти в каждом псалме
+var COMMON = { 'меня': 1, 'тебя': 1, 'тебе': 1, 'твой': 1, 'твоя': 1, 'твое': 1, 'твои': 1, 'моей': 1, 'моих': 1, 'моим': 1, 'мною': 1,
+  'свой': 1, 'свою': 1, 'буду': 1, 'будет': 1, 'будут': 1, 'когда': 1, 'потому': 1, 'чтобы': 1, 'если': 1, 'этот': 1, 'него': 1,
+  'было': 1, 'были': 1, 'есть': 1, 'очень': 1, 'всех': 1, 'всем': 1, 'даже': 1, 'также': 1 };
+function keyWords(text) {
+  var out = {};
+  String(text).toLowerCase().replace(/ё/g, 'е').split(/[^а-я]+/).forEach(function (w) {
+    if (w.length >= 4 && !COMMON[w]) out[w] = 1;
+  });
+  return Object.keys(out);
+}
+function keyStems(text) {
+  var out = {};
+  keyWords(text).forEach(function (w) { out[w.slice(0, 4)] = 1; });
+  return Object.keys(out);
+}
+// Возвращает до трёх похожих отрывков, самые точные и короткие — первыми. Пустой список, если ничего похожего.
 function identify(text) {
-  if (!PS.length) return null;
-  var mine = Object.keys(stems(text));
-  if (mine.length < 3) return null;
-  if (!stemCache) stemCache = PS.map(function (c) { return c.map(stems); });
-  var best = null;
+  if (!PS.length) return [];
+  var mine = keyStems(text);
+  if (mine.length < 2) return [];
+  var words = keyWords(text);
+  if (!stemCache) stemCache = PS.map(function (c) {
+    return c.map(function (v) {
+      var s = stems(v), wd = {};
+      keyWords(v).forEach(function (x) { wd[x] = 1; });
+      return { s: s, n: Object.keys(s).length, wd: wd };
+    });
+  });
+  var maxW = mine.length === 2 ? 1 : 3;   // по двум словам ищем только внутри одного стиха
+  var need = mine.length === 2 ? 2 : 3;
+  var found = [];
   for (var p = 0; p < stemCache.length; p++) {
     var ch = stemCache[p];
     for (var v = 0; v < ch.length; v++) {
-      for (var w = 1; w <= 3 && v + w <= ch.length; w++) {
-        var hit = 0;
+      for (var w = 1; w <= maxW && v + w <= ch.length; w++) {
+        var hit = 0, size = 0;
+        for (var k = 0; k < w; k++) size += ch[v + k].n;
         for (var i = 0; i < mine.length; i++) {
-          for (var k = 0; k < w; k++) { if (ch[v + k][mine[i]]) { hit++; break; } }
+          for (var k2 = 0; k2 < w; k2++) { if (ch[v + k2].s[mine[i]]) { hit++; break; } }
         }
         var score = hit / mine.length;
-        if (hit >= 3 && score >= 0.6 && (!best || score > best.score + 1e-9)) {
-          best = { psalm: p + 1, from: v + 1, to: v + w, score: score };
+        if (hit >= need && score >= 0.6) {
+          // сколько слов совпало точно, в той же форме
+          var exact = 0;
+          for (var e = 0; e < words.length; e++) {
+            for (var k3 = 0; k3 < w; k3++) { if (ch[v + k3].wd[words[e]]) { exact++; break; } }
+          }
+          found.push({ psalm: p + 1, from: v + 1, to: v + w, score: score, exact: exact, w: w, dens: hit / (size || 1) });
         }
       }
     }
   }
-  return best ? { psalm: best.psalm, from: best.from, to: best.to } : null;
+  found.sort(function (a, b) { return (b.score - a.score) || (b.exact - a.exact) || (a.w - b.w) || (b.dens - a.dens) || (a.psalm - b.psalm) || (a.from - b.from); });
+  var out = [];
+  for (var j = 0; j < found.length && out.length < 3; j++) {
+    var f = found[j];
+    var clash = out.some(function (o) { return o.psalm === f.psalm && o.from <= f.to && f.from <= o.to; });
+    if (!clash) out.push({ psalm: f.psalm, from: f.from, to: f.to });
+  }
+  return out;
 }
 function passageData() {
   if (S.ref) {
@@ -374,7 +413,8 @@ function viewHome() {
 function viewStep() {
   var st = step();
   if (st.kind === 'final') return viewFinal(st);
-  if (st.kind === 'psalm' && S.refAsk) return viewConfirm(st);
+  if (!Array.isArray(S.refAsk) || !S.refAsk.length) S.refAsk = null;
+  if (st.kind === 'psalm' && S.refAsk) return viewConfirm();
 
   var title = st.kind === 'feel' && S.fuQ ? S.fuQ : st.title;
   var helper = st.kind === 'feel' && S.fuQ ? '' : st.helper;
@@ -413,14 +453,15 @@ function viewStep() {
   return html;
 }
 
-function viewConfirm(st) {
-  var r = S.refAsk;
-  return topBar() + '<section class="ask"><h1 class="q q-l" tabindex="-1">Похоже, это ' + esc(refLabel(r)) + '</h1>' +
-    '<p class="helper">Так этот отрывок звучит в Синодальном переводе.</p></section>' +
-    '<div class="slip"><p class="slip-title">' + esc(refLabel(r)) + '</p><p>' + esc(refText(r)) + '</p></div>' +
-    art(st.art) +
-    '<div class="actions"><button type="button" class="outline" data-act="ref-no">Нет, другой</button>' +
-    '<button type="button" class="primary" data-act="ref-yes"><span>Да, это он</span>' + ic('next', 20) + '</button></div>';
+function viewConfirm() {
+  var list = S.refAsk, one = list.length === 1;
+  var cards = list.map(function (r, i) {
+    return '<button type="button" class="sug" data-act="ref-pick" data-i="' + i + '"><b>' + esc(refLabel(r)) + '</b>' + esc(refText(r)) + '</button>';
+  }).join('');
+  return topBar() + '<section class="ask"><h1 class="q q-m" tabindex="-1">' + (one ? 'Похоже на этот отрывок' : 'Похоже на один из этих отрывков') + '</h1>' +
+    '<p class="helper">' + (one ? 'Если это он, нажми на него.' : 'Если твой среди них, нажми на него.') + ' Так он звучит в Синодальном переводе.</p></section>' +
+    '<div class="sugs" role="group" aria-label="Похожие отрывки">' + cards + '</div><div class="spacer"></div>' +
+    '<div class="actions"><button type="button" class="outline" data-act="ref-no">' + (one ? 'Не он — оставить мои слова' : 'Ни один — оставить мои слова') + '</button></div>';
 }
 
 function viewPause() {
@@ -537,7 +578,7 @@ function askFollowup(pending) {
     busy = null; commit();
     if (j.crisis === true && !S.crisisShown) { S.fuDone = true; S.crisisShown = true; S.view = 'crisis'; return render(); }
     var q = String(j.question || '').replace(/\s+/g, ' ').trim().slice(0, 220);
-    if (!q) { S.fuDone = true; return goPause(); }
+    if (!/[A-Za-zА-Яа-яЁё]/.test(q)) { S.fuDone = true; return goPause(); }
     S.fuQ = q; render();
   }).catch(function () { commit(); S.fuDone = true; goPause(); });
 }
@@ -566,7 +607,7 @@ function next() {
     if (S.ref && S.refText === text) return goPause();
     var found = identify(text);
     S.ref = null; S.refText = '';
-    if (found) { S.refAsk = found; return render(); }
+    if (found.length) { S.refAsk = found; return render(); }
     return goPause();
   }
   S.answers[st.id] = text;
@@ -620,8 +661,8 @@ function hint() {
   busy = 'hint'; render();
   ai('hint', { step: st.hint, passage: passageData() }).then(function (r) {
     busy = null;
-    var t = String(r.text || '').trim().slice(0, 1200);
-    if (t) S.hints[st.id] = t; else note = 'Помощник не ответил. Ответь своими словами или просто иди дальше.';
+    var t = String(r.text || '').replace(/\*\*|__|`/g, '').replace(/^\s*#+\s*/gm, '').trim().slice(0, 1200);
+    if (/[A-Za-zА-Яа-яЁё]/.test(t)) S.hints[st.id] = t; else note = 'Помощник не ответил. Ответь своими словами или просто иди дальше.';
     render();
   }).catch(function () {
     busy = null; note = 'Помощник сейчас недоступен. Ответь своими словами или просто иди дальше.'; render();
@@ -704,7 +745,11 @@ var ACTS = {
     if (!r) return;
     S.ref = r; S.refText = refText(r); S.drafts[draftKey()] = S.refText; S.sug = null; render();
   },
-  'ref-yes': function () { S.ref = S.refAsk; S.refText = S.answers.psalm; S.refAsk = null; goPause(); },
+  'ref-pick': function (el) {
+    var r = S.refAsk && S.refAsk[Number(el.getAttribute('data-i'))];
+    if (!r) return;
+    S.ref = r; S.refText = S.answers.psalm; S.refAsk = null; goPause();
+  },
   'ref-no': function () { S.ref = null; S.refAsk = null; goPause(); },
   go: function () { if (S.step < ex().steps.length - 1) goStep(S.step + 1); },
   'crisis-go': function () { goPause(); },

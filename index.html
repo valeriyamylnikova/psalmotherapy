@@ -224,7 +224,7 @@ function verseRange(r) { return r.from === r.to ? 'стих ' + r.from : 'сти
 // ── запросы к помощнику ───────────────────────────────────────────────
 function ai(task, data) {
   var ctrl = new AbortController();
-  var timer = setTimeout(function () { ctrl.abort(); }, 45000);
+  var timer = setTimeout(function () { ctrl.abort(); }, 60000);
   return fetch(APP.proxy, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -720,7 +720,7 @@ function hint() {
         if (list.length) S.refAsk = list;
         else note = 'Не нашлось похожего псалма. Можно оставить свои слова и идти дальше.';
         render();
-      }).catch(function () { busy = null; note = 'Помощник сейчас недоступен. Оставь свои слова или иди дальше.'; render(); });
+      }).catch(function () { busy = null; note = 'Не получилось подобрать за раз. Можно нажать ещё раз, оставить свои слова или идти дальше.'; render(); });
       return;
     }
     // Пусто — подбираем отрывки по тому, что человек рассказал о себе

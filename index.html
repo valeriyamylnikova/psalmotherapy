@@ -465,7 +465,7 @@ function viewConfirm() {
 }
 
 function viewPause() {
-  var p = APP.pauses[S.step % APP.pauses.length];
+  var p = APP.pauses[(Number(S.pauseIdx) || 0) % APP.pauses.length];
   return topBar() + '<section class="ask center" style="margin-top:36px">' + art('breathe', 'top-art big') +
     '<h1 class="q ' + qClass(p.title) + '" tabindex="-1">' + esc(p.title) + '</h1>' +
     (p.helper ? '<p class="helper">' + esc(p.helper) + '</p>' : '') + '</section>' +
@@ -534,7 +534,15 @@ function render() {
 }
 
 // ── ход упражнения ────────────────────────────────────────────────────
-function goPause() { S.view = 'pause'; S.fuQ = null; note = ''; busy = null; render(); }
+// После шага: пауза только там, где у шага в exercises.js стоит pause: true. Иначе сразу следующий шаг.
+function goPause() {
+  S.fuQ = null; note = ''; busy = null;
+  if (step().pause !== true && S.step < ex().steps.length - 1) return goStep(S.step + 1);
+  // слова паузы идут по кругу и продолжаются с того места, где остановились в прошлый раз
+  S.pauseIdx = Number(settings.pauseN) || 0;
+  settings.pauseN = (S.pauseIdx + 1) % APP.pauses.length; saveSettings();
+  S.view = 'pause'; render();
+}
 function goStep(n) { S.step = n; S.view = 'step'; S.refAsk = null; note = ''; busy = null; render(); }
 
 function pickExercise() {

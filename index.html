@@ -90,9 +90,11 @@ h1:focus{outline:none}
 .slip{margin-top:20px;padding:14px 18px;background:var(--slip);border:1px dashed var(--edge);border-radius:6px;transform:rotate(-.6deg)}
 .slip-title{margin:0 0 6px;font-size:14px;font-weight:700;color:var(--accent)}
 .slip p{margin:0;font-size:15px;line-height:1.55;white-space:pre-line}
-.passage{margin:0;padding:0 0 10px;border-bottom:1px solid var(--rule);font-size:14px;line-height:1.45;color:var(--muted);
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.passage{display:block;width:100%;text-align:left;margin:0 0 4px;padding:0 0 10px;border:0;border-bottom:1px solid var(--rule);background:transparent;
+  font-family:inherit;font-size:14px;line-height:1.45;color:var(--muted)}
+.passage .txt{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .passage b{color:var(--accent)}
+.passage .more{display:inline-block;margin-top:4px;font-size:13px;font-style:italic;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .sugs{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .sug{text-align:left;padding:12px 16px;background:var(--slip);border:1px dashed var(--edge);border-radius:6px;font-size:15px;line-height:1.5}
 .sug b{display:block;margin-bottom:2px;font-size:14px;color:var(--accent)}
@@ -387,9 +389,16 @@ function nextBtn(label, disabled) {
     '<span>' + (wait ? 'Думаю…' : esc(label || 'Дальше')) + '</span>' + (wait ? '' : ic('next', 20)) + '</button>';
 }
 function passageNote() {
-  var text = S.ref ? refText(S.ref) : (S.answers.psalm || '');
+  // Узнанный отрывок — компактная плашка-кнопка: открывает весь псалом целиком
+  if (S.ref) {
+    return '<button type="button" class="passage" data-act="read-ref">' +
+      '<span class="txt"><b>' + esc(refLabel(S.ref)) + '.</b> ' + esc(refText(S.ref)) + '</span>' +
+      '<span class="more">Читать псалом целиком →</span></button>';
+  }
+  // Отрывок своими словами (не узнан) — просто показываем, тоже обрезая длинное
+  var text = S.answers.psalm || '';
   if (!text) return '';
-  return '<p class="passage"><b>' + esc(S.ref ? refLabel(S.ref) : 'Твой отрывок') + '.</b> ' + esc(text) + '</p>';
+  return '<p class="passage"><span class="txt"><b>Твой отрывок.</b> ' + esc(text) + '</span></p>';
 }
 
 // ── экраны ────────────────────────────────────────────────────────────
@@ -479,11 +488,14 @@ function viewReader() {
     var n = i + 1, on = n >= r.from && n <= r.to;
     return '<p class="verse' + (on ? ' on' : '') + '"' + (n === r.from ? ' id="vmark"' : '') + '><span class="vn">' + n + '</span>' + esc(v) + '</p>';
   }).join('');
+  var foot = S.reader.origin === 'ref'
+    ? '<button type="button" class="primary" data-act="read-back"><span>Назад</span></button>'
+    : '<button type="button" class="outline" data-act="read-back">Назад к отрывкам</button>' +
+      '<button type="button" class="primary" data-act="read-choose"><span>Выбрать этот отрывок</span>' + ic('next', 20) + '</button>';
   return topBar() + '<section class="ask"><h1 class="q q-l" tabindex="-1">Псалом ' + r.psalm + '</h1>' +
     '<p class="helper">Синодальный перевод. ' + (r.from === r.to ? 'Выделен ' : 'Выделены ') + esc(verseRange(r)) + '.</p></section>' +
     '<div class="psalm">' + body + '</div>' +
-    '<div class="actions"><button type="button" class="outline" data-act="read-back">Назад к отрывкам</button>' +
-    '<button type="button" class="primary" data-act="read-choose"><span>Выбрать этот отрывок</span>' + ic('next', 20) + '</button></div>';
+    '<div class="actions">' + foot + '</div>';
 }
 
 function viewPause() {
@@ -532,7 +544,7 @@ function render() {
   if (S.home || !S.started) { screen = 'home'; html = viewHome(); }
   else if (S.view === 'pause') { screen = 'pause' + S.step; html = viewPause(); }
   else if (S.view === 'crisis') { screen = 'crisis'; html = viewCrisis(); }
-  else if (S.reader && step().kind === 'psalm') { screen = 'reader'; html = viewReader(); }
+  else if (S.reader && S.reader.ref) { screen = 'reader'; html = viewReader(); }
   else { S.reader = null; screen = 'step' + S.step + (S.fuQ ? 'f' + S.fu.length : '') + (S.refAsk ? 'c' : '') + (S.ideasOpen ? 'i' : ''); html = viewStep(); }
 
   var keepFocus = screen === lastScreen && document.activeElement && document.activeElement.id;
@@ -784,6 +796,12 @@ var ACTS = {
     var ta = document.getElementById('answer');
     if (ta) S.drafts[draftKey()] = ta.value;
     S.reader = { ref: r, origin: origin }; render();
+  },
+  'read-ref': function () {
+    if (!S.ref) return;
+    var ta = document.getElementById('answer');
+    if (ta) S.drafts[draftKey()] = ta.value;
+    S.reader = { ref: S.ref, origin: 'ref' }; render();
   },
   'read-back': function () { S.reader = null; render(); },
   'read-choose': function () {

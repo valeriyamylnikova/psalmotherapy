@@ -96,6 +96,13 @@ h1:focus{outline:none}
 .sugs{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .sug{text-align:left;padding:12px 16px;background:var(--slip);border:1px dashed var(--edge);border-radius:6px;font-size:15px;line-height:1.5}
 .sug b{display:block;margin-bottom:2px;font-size:14px;color:var(--accent)}
+.sug .more{display:inline-block;margin-top:6px;font-size:13px;font-style:italic;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+
+/* чтение псалма целиком */
+.psalm{margin-top:16px}
+.verse{margin:0 0 10px;font-size:16px;line-height:1.55}
+.verse .vn{display:inline-block;min-width:22px;color:var(--muted);font-size:13px}
+.verse.on{background:var(--slip);padding:8px 12px;border-radius:8px}
 
 /* вход */
 .brand{margin:0;font-family:var(--hand);font-size:52px;line-height:1;font-weight:700}
@@ -174,7 +181,7 @@ function saveSettings() { keep('psalm-settings', settings, 'localStorage'); }
 
 function fresh() {
   return { started: false, home: true, view: 'step', ex: 0, step: 0, answers: {}, drafts: {},
-    fu: [], fuQ: null, fuDone: false, ref: null, refText: '', refAsk: null, sug: null,
+    fu: [], fuQ: null, fuDone: false, ref: null, refText: '', refAsk: null, sug: null, reader: null,
     hints: {}, ideasOpen: false, ideas: null, idea: null, crisisShown: false, noAi: false };
 }
 var S = Object.assign(fresh(), load('psalm-state', 'sessionStorage') || {});
@@ -210,6 +217,7 @@ function toast(text) {
 }
 function refLabel(r) { return 'Псалом ' + r.psalm + ':' + r.from + (r.to > r.from ? '–' + r.to : ''); }
 function refText(r) { return (PS[r.psalm - 1] || []).slice(r.from - 1, r.to).join(' '); }
+function verseRange(r) { return r.from === r.to ? 'стих ' + r.from : 'стихи ' + r.from + '–' + r.to; }
 
 // ── запросы к помощнику ───────────────────────────────────────────────
 function ai(task, data) {
@@ -429,8 +437,9 @@ function viewStep() {
     html += '<div class="slip"><p class="slip-title">Немного контекста</p><p>' + esc(S.hints[st.id]) + '</p></div>';
   }
   if (st.kind === 'psalm' && S.sug) {
+    html += '<p class="helper" style="margin:20px 0 -2px">Нажми на отрывок, чтобы прочитать псалом целиком.</p>';
     html += '<div class="sugs" role="group" aria-label="Отрывки на выбор">' + S.sug.map(function (r, i) {
-      return '<button type="button" class="sug" data-act="pick-sug" data-i="' + i + '"><b>' + esc(refLabel(r)) + '</b>' + esc(refText(r)) + '</button>';
+      return '<button type="button" class="sug" data-act="read" data-origin="sug" data-i="' + i + '"><b>' + esc(refLabel(r)) + '</b>' + esc(refText(r)) + '<span class="more">Открыть псалом целиком →</span></button>';
     }).join('') + '</div>';
   }
 
@@ -456,12 +465,25 @@ function viewStep() {
 function viewConfirm() {
   var list = S.refAsk, one = list.length === 1;
   var cards = list.map(function (r, i) {
-    return '<button type="button" class="sug" data-act="ref-pick" data-i="' + i + '"><b>' + esc(refLabel(r)) + '</b>' + esc(refText(r)) + '</button>';
+    return '<button type="button" class="sug" data-act="read" data-origin="confirm" data-i="' + i + '"><b>' + esc(refLabel(r)) + '</b>' + esc(refText(r)) + '<span class="more">Открыть псалом целиком →</span></button>';
   }).join('');
   return topBar() + '<section class="ask"><h1 class="q q-m" tabindex="-1">' + (one ? 'Похоже на этот отрывок' : 'Похоже на один из этих отрывков') + '</h1>' +
-    '<p class="helper">' + (one ? 'Если это он, нажми на него.' : 'Если твой среди них, нажми на него.') + ' Так он звучит в Синодальном переводе.</p></section>' +
+    '<p class="helper">' + (one ? 'Если это он, нажми, чтобы прочитать и выбрать.' : 'Нажми на нужный, чтобы прочитать и выбрать.') + ' Так он звучит в Синодальном переводе.</p></section>' +
     '<div class="sugs" role="group" aria-label="Похожие отрывки">' + cards + '</div><div class="spacer"></div>' +
     '<div class="actions"><button type="button" class="outline" data-act="ref-no">' + (one ? 'Не он — оставить мои слова' : 'Ни один — оставить мои слова') + '</button></div>';
+}
+
+function viewReader() {
+  var r = S.reader.ref, verses = PS[r.psalm - 1] || [];
+  var body = verses.map(function (v, i) {
+    var n = i + 1, on = n >= r.from && n <= r.to;
+    return '<p class="verse' + (on ? ' on' : '') + '"' + (n === r.from ? ' id="vmark"' : '') + '><span class="vn">' + n + '</span>' + esc(v) + '</p>';
+  }).join('');
+  return topBar() + '<section class="ask"><h1 class="q q-l" tabindex="-1">Псалом ' + r.psalm + '</h1>' +
+    '<p class="helper">Синодальный перевод. ' + (r.from === r.to ? 'Выделен ' : 'Выделены ') + esc(verseRange(r)) + '.</p></section>' +
+    '<div class="psalm">' + body + '</div>' +
+    '<div class="actions"><button type="button" class="outline" data-act="read-back">Назад к отрывкам</button>' +
+    '<button type="button" class="primary" data-act="read-choose"><span>Выбрать этот отрывок</span>' + ic('next', 20) + '</button></div>';
 }
 
 function viewPause() {
@@ -510,7 +532,8 @@ function render() {
   if (S.home || !S.started) { screen = 'home'; html = viewHome(); }
   else if (S.view === 'pause') { screen = 'pause' + S.step; html = viewPause(); }
   else if (S.view === 'crisis') { screen = 'crisis'; html = viewCrisis(); }
-  else { screen = 'step' + S.step + (S.fuQ ? 'f' + S.fu.length : '') + (S.refAsk ? 'c' : '') + (S.ideasOpen ? 'i' : ''); html = viewStep(); }
+  else if (S.reader && step().kind === 'psalm') { screen = 'reader'; html = viewReader(); }
+  else { S.reader = null; screen = 'step' + S.step + (S.fuQ ? 'f' + S.fu.length : '') + (S.refAsk ? 'c' : '') + (S.ideasOpen ? 'i' : ''); html = viewStep(); }
 
   var keepFocus = screen === lastScreen && document.activeElement && document.activeElement.id;
   $app.innerHTML = html;
@@ -524,6 +547,10 @@ function render() {
   }
   lastScreen = screen;
 
+  if (screen === 'reader') {
+    var vm = document.getElementById('vmark');
+    if (vm) { try { vm.scrollIntoView({ block: 'center' }); } catch (e) {} }
+  }
   if (screen.indexOf('pause') === 0) {
     pauseTimer = setTimeout(function () {
       var go = document.getElementById('go');
@@ -730,6 +757,7 @@ function back() {
   note = '';
   if (S.view === 'crisis') { S.view = 'step'; return render(); }
   if (S.view === 'pause') { S.view = 'step'; return render(); }
+  if (S.reader) { S.reader = null; return render(); }
   var st = step();
   var ta = document.getElementById('answer');
   if (ta) S.drafts[draftKey()] = ta.value;
@@ -748,15 +776,25 @@ var ACTS = {
   back: back,
   next: next,
   hint: hint,
-  'pick-sug': function (el) {
-    var r = S.sug && S.sug[Number(el.getAttribute('data-i'))];
+  read: function (el) {
+    var origin = el.getAttribute('data-origin');
+    var list = origin === 'sug' ? S.sug : S.refAsk;
+    var r = list && list[Number(el.getAttribute('data-i'))];
     if (!r) return;
-    S.ref = r; S.refText = refText(r); S.drafts[draftKey()] = S.refText; S.sug = null; render();
+    var ta = document.getElementById('answer');
+    if (ta) S.drafts[draftKey()] = ta.value;
+    S.reader = { ref: r, origin: origin }; render();
   },
-  'ref-pick': function (el) {
-    var r = S.refAsk && S.refAsk[Number(el.getAttribute('data-i'))];
-    if (!r) return;
-    S.ref = r; S.refText = S.answers.psalm; S.refAsk = null; goPause();
+  'read-back': function () { S.reader = null; render(); },
+  'read-choose': function () {
+    var rd = S.reader;
+    if (!rd) return;
+    S.reader = null;
+    if (rd.origin === 'sug') {
+      S.ref = rd.ref; S.refText = refText(rd.ref); S.drafts[draftKey()] = S.refText; S.sug = null; render();
+    } else {
+      S.ref = rd.ref; S.refText = S.answers.psalm; S.refAsk = null; goPause();
+    }
   },
   'ref-no': function () { S.ref = null; S.refAsk = null; goPause(); },
   go: function () { if (S.step < ex().steps.length - 1) goStep(S.step + 1); },

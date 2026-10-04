@@ -464,8 +464,14 @@ function viewStep() {
   var canHint = st.hintLabel && ((st.kind === 'psalm' && !S.sug) || (st.kind === 'ask' && !S.hints[st.id]));
   if (canHint) {
     var hw = busy === 'hint';
-    hintBtn = '<button type="button" class="ghost" data-act="hint"' + (hw ? ' disabled aria-busy="true"' : '') + '>' + ic('sprig', 20) +
-      '<span>' + (hw ? 'Ищу…' : esc(st.hintLabel)) + '</span></button>';
+    // Надпись зависит от того, написал ли человек что-нибудь
+    var hintText = st.hintLabel;
+    if (val.trim()) {
+      if (st.kind === 'psalm') hintText = 'Подскажи, на что похоже';
+      else if (st.kind === 'ask') hintText = 'Посмотреть глубже';
+    }
+    hintBtn = '<button type="button" class="ghost" id="hintbtn" data-act="hint"' + (hw ? ' disabled aria-busy="true"' : '') + '>' + ic('sprig', 20) +
+      '<span>' + (hw ? 'Ищу…' : esc(hintText)) + '</span></button>';
   }
   html += '<div class="actions">' + noteHtml() + hintBtn + nextBtn('Дальше', st.required && !val.trim()) + '</div>';
   return html;
@@ -652,9 +658,19 @@ function next() {
   if (st.kind === 'psalm') {
     S.answers.psalm = text;
     if (S.ref && S.refText === text) return goPause();
-    var found = identify(text);
     S.ref = null; S.refText = '';
-    if (found.length) { S.refAsk = found; return render(); }
+    // Сначала ищем по словам, затем — просим помощника понять, на какой псалом похожа фраза
+    var local = identify(text);
+    if (local.length) { S.refAsk = local; return render(); }
+    if (aiOn()) {
+      busy = 'next'; render();
+      return ai('match', { phrase: text }).then(function (r) {
+        busy = null;
+        var list = validRefs((parseJson(r.text) || {}).items);
+        if (list.length) { S.refAsk = list; return render(); }
+        goPause();
+      }).catch(function () { busy = null; goPause(); });
+    }
     return goPause();
   }
   S.answers[st.id] = text;
@@ -690,6 +706,24 @@ function hint() {
   note = '';
 
   if (st.kind === 'psalm') {
+    var typed = (ta ? ta.value : draft()).trim();
+    // Если человек что-то написал — ищем, на какой псалом это похоже (его фраза, а не самочувствие)
+    if (typed) {
+      S.answers.psalm = typed; S.ref = null; S.refText = '';
+      var local = identify(typed);
+      if (local.length) { S.refAsk = local; return render(); }
+      if (!aiOn() || !PS.length) { note = 'Не нашлось похожего псалма. Можно оставить свои слова и идти дальше.'; return render(); }
+      busy = 'hint'; render();
+      ai('match', { phrase: typed }).then(function (r) {
+        busy = null;
+        var list = validRefs((parseJson(r.text) || {}).items);
+        if (list.length) S.refAsk = list;
+        else note = 'Не нашлось похожего псалма. Можно оставить свои слова и идти дальше.';
+        render();
+      }).catch(function () { busy = null; note = 'Помощник сейчас недоступен. Оставь свои слова или иди дальше.'; render(); });
+      return;
+    }
+    // Пусто — подбираем отрывки по тому, что человек рассказал о себе
     var showSug = function (list) {
       busy = null;
       if (!list.length) list = fallbackRefs();
@@ -706,7 +740,7 @@ function hint() {
 
   if (!aiOn()) { note = 'Помощник сейчас недоступен. Ответь своими словами или просто иди дальше.'; return render(); }
   busy = 'hint'; render();
-  ai('hint', { step: st.hint, passage: passageData() }).then(function (r) {
+  ai('hint', { step: st.hint, passage: passageData(), answer: (ta ? ta.value : draft()).trim() }).then(function (r) {
     busy = null;
     var t = String(r.text || '').replace(/\*\*|__|`/g, '').replace(/^\s*#+\s*/gm, '').trim().slice(0, 1200);
     if (/[A-Za-zА-Яа-яЁё]/.test(t)) S.hints[st.id] = t; else note = 'Помощник не ответил. Ответь своими словами или просто иди дальше.';
@@ -844,6 +878,14 @@ $app.addEventListener('input', function (ev) {
     S.drafts[draftKey()] = t.value; save();
     var btn = $app.querySelector('[data-act="next"]');
     if (btn && step().required && !busy) btn.disabled = !t.value.trim();
+    // Надпись на кнопке подсказки зависит от того, пусто ли поле
+    if (!busy) {
+      var hb = document.getElementById('hintbtn');
+      if (hb) {
+        var sp = hb.querySelector('span'), k = step().kind, has = t.value.trim();
+        if (sp) sp.textContent = has ? (k === 'psalm' ? 'Подскажи, на что похоже' : k === 'ask' ? 'Посмотреть глубже' : step().hintLabel) : step().hintLabel;
+      }
+    }
   } else if (t.id === 'code') {
     codeDraft = t.value;
   }

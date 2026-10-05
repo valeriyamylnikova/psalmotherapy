@@ -596,8 +596,31 @@ function pickExercise() {
   for (var i = 0; i < list.length; i++) if (settings.done.indexOf(list[i].id) < 0) return i;
   return 0;
 }
+// Анонимная метка устройства для подсчёта посещений (без личных данных)
+function deviceId() {
+  try {
+    var v = localStorage.getItem('psalm-did');
+    if (!v) { v = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem('psalm-did', v); }
+    return v;
+  } catch (e) { return ''; }
+}
+// Отметка входа — отправляется и забывается, на ход упражнения не влияет
+function statPing() {
+  if (S.noAi && !(settings.code && settings.verified)) return;
+  if (!settings.code || !settings.verified) return;
+  try {
+    fetch(APP.proxy, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: settings.code, task: 'stat', data: { did: deviceId() } }),
+      keepalive: true
+    }).catch(function () {});
+  } catch (e) {}
+}
 function begin() {
-  if (!S.started) { var noAi = S.noAi; S = fresh(); S.noAi = noAi; S.ex = pickExercise(); S.started = true; }
+  if (!S.started) {
+    var noAi = S.noAi; S = fresh(); S.noAi = noAi; S.ex = pickExercise(); S.started = true;
+    statPing();
+  }
   S.home = false; note = ''; offerNoAi = false; busy = null;
   render();
 }

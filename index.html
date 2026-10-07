@@ -620,14 +620,14 @@ function deviceId() {
     return v;
   } catch (e) { return ''; }
 }
-// Отметка входа — отправляется и забывается, на ход упражнения не влияет
-function statPing() {
-  if (S.noAi && !(settings.code && settings.verified)) return;
+// Отметка для статистики — отправляется и забывается, на ход упражнения не влияет.
+// kind: 'enter' (вход) или 'done' (дошёл до конца)
+function statPing(kind) {
   if (!settings.code || !settings.verified) return;
   try {
     fetch(APP.proxy, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: settings.code, task: 'stat', data: { did: deviceId() } }),
+      body: JSON.stringify({ code: settings.code, task: 'stat', data: { did: deviceId(), done: kind === 'done' } }),
       keepalive: true
     }).catch(function () {});
   } catch (e) {}
@@ -971,6 +971,7 @@ var ACTS = {
   'idea-own': function () { S.idea = S.idea === APP.ownIdea ? null : APP.ownIdea; render(); },
   copy: copyRecord,
   finish: function () {
+    statPing('done');
     var id = ex().id;
     if (settings.done.indexOf(id) < 0) settings.done.push(id);
     if (settings.done.length >= APP.exercises.length) settings.done = [];

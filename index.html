@@ -100,6 +100,14 @@ h1:focus{outline:none}
 .sug b{display:block;margin-bottom:2px;font-size:14px;color:var(--accent)}
 .sug .more{display:inline-block;margin-top:6px;font-size:13px;font-style:italic;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 
+/* места из Евангелий на шаге про Иисуса */
+.gospel{margin-top:20px}
+.glead{margin:0 0 12px;font-size:16px;line-height:1.5;font-style:italic;color:var(--ink)}
+.gitem{padding:12px 16px;margin-bottom:10px;background:var(--slip);border:1px dashed var(--edge);border-radius:6px}
+.gref{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:4px}
+.gref .gnote{font-weight:400;font-style:italic;color:var(--muted)}
+.gtext{margin:0;font-size:15px;line-height:1.55}
+
 /* чтение псалма целиком */
 .psalm{margin-top:16px}
 .verse{margin:0 0 10px;font-size:16px;line-height:1.55}
@@ -160,6 +168,7 @@ h1:focus{outline:none}
 <noscript><p style="padding:24px">Для упражнений нужен включённый JavaScript.</p></noscript>
 
 <script src="psalms.js"></script>
+<script src="gospels.js"></script>
 <script src="exercises.js"></script>
 <script>
 (function () {
@@ -183,7 +192,7 @@ function saveSettings() { keep('psalm-settings', settings, 'localStorage'); }
 
 function fresh() {
   return { started: false, home: true, view: 'step', ex: 0, step: 0, answers: {}, drafts: {},
-    fu: [], fuQ: null, fuDone: false, ref: null, refText: '', refAsk: null, sug: null, reader: null,
+    fu: [], fuQ: null, fuDone: false, ref: null, refText: '', refAsk: null, sug: null, reader: null, gospel: null,
     hints: {}, ideasOpen: false, ideas: null, idea: null, crisisShown: false, noAi: false };
 }
 var S = Object.assign(fresh(), load('psalm-state', 'sessionStorage') || {});
@@ -442,8 +451,15 @@ function viewStep() {
     '<h1 class="q ' + qClass(title) + '" tabindex="-1">' + esc(title) + '</h1>' +
     (helper ? '<p class="helper">' + esc(helper) + '</p>' : '') + '</section>';
 
-  if (st.kind === 'ask' && S.hints[st.id]) {
+  if (st.kind === 'ask' && !st.gospel && S.hints[st.id]) {
     html += '<div class="slip"><p class="slip-title">Немного контекста</p><p>' + esc(S.hints[st.id]) + '</p></div>';
+  }
+  if (st.gospel && S.gospel) {
+    html += '<div class="gospel">' +
+      (S.gospel.lead ? '<p class="glead">' + esc(S.gospel.lead) + '</p>' : '') +
+      S.gospel.items.map(function (x) {
+        return '<div class="gitem"><div class="gref">' + esc(x.ref) + (x.note ? ' <span class="gnote">· ' + esc(x.note) + '</span>' : '') + '</div><p class="gtext">' + esc(x.text) + '</p></div>';
+      }).join('') + '</div>';
   }
   if (st.kind === 'psalm' && S.sug) {
     html += '<p class="helper" style="margin:20px 0 -2px">Нажми на отрывок, чтобы прочитать псалом целиком.</p>';
@@ -461,12 +477,12 @@ function viewStep() {
   html += art(st.art);
 
   var hintBtn = '';
-  var canHint = st.hintLabel && ((st.kind === 'psalm' && !S.sug) || (st.kind === 'ask' && !S.hints[st.id]));
+  var canHint = st.hintLabel && ((st.kind === 'psalm' && !S.sug) || (st.gospel && !S.gospel) || (st.kind === 'ask' && !st.gospel && !S.hints[st.id]));
   if (canHint) {
     var hw = busy === 'hint';
-    // Надпись зависит от того, написал ли человек что-нибудь
+    // Надпись зависит от того, написал ли человек что-нибудь (на шаге про Иисуса — всегда одна)
     var hintText = st.hintLabel;
-    if (val.trim()) {
+    if (val.trim() && !st.gospel) {
       if (st.kind === 'psalm') hintText = 'Подскажи, на что похоже';
       else if (st.kind === 'ask') hintText = 'Посмотреть глубже';
     }
@@ -551,7 +567,7 @@ function render() {
   else if (S.view === 'pause') { screen = 'pause' + S.step; html = viewPause(); }
   else if (S.view === 'crisis') { screen = 'crisis'; html = viewCrisis(); }
   else if (S.reader && S.reader.ref) { screen = 'reader'; html = viewReader(); }
-  else { S.reader = null; screen = 'step' + S.step + (S.fuQ ? 'f' + S.fu.length : '') + (S.refAsk ? 'c' : '') + (S.ideasOpen ? 'i' : ''); html = viewStep(); }
+  else { S.reader = null; screen = 'step' + S.step + (S.fuQ ? 'f' + S.fu.length : '') + (S.refAsk ? 'c' : '') + (S.ideasOpen ? 'i' : '') + (S.gospel && step().gospel ? 'g' : ''); html = viewStep(); }
 
   var keepFocus = screen === lastScreen && document.activeElement && document.activeElement.id;
   $app.innerHTML = html;
@@ -721,6 +737,41 @@ function fallbackRefs() {
   }
   return out;
 }
+
+// Названия евангелий к ключам вшитого файла GOSPELS
+var GBOOK = { 'матфея': 'Матфея', 'матфей': 'Матфея', 'мф': 'Матфея', 'matthew': 'Матфея', 'mt': 'Матфея',
+  'марка': 'Марка', 'марк': 'Марка', 'мк': 'Марка', 'mark': 'Марка', 'mc': 'Марка',
+  'луки': 'Луки', 'лука': 'Луки', 'лк': 'Луки', 'luke': 'Луки', 'lc': 'Луки', 'lk': 'Луки',
+  'иоанна': 'Иоанна', 'иоанн': 'Иоанна', 'иоан': 'Иоанна', 'ин': 'Иоанна', 'john': 'Иоанна', 'jn': 'Иоанна', 'jo': 'Иоанна' };
+function gbook(name) {
+  var k = String(name || '').toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim().replace(/^(св\.?\s*|святого\s*|от\s+)/, '');
+  return GBOOK[k] || null;
+}
+// Проверяет ссылки от ИИ и подставляет НАСТОЯЩИЙ текст из вшитых Евангелий. Плохие ссылки отбрасывает.
+function resolveGospel(items) {
+  var G = window.GOSPELS || {}, out = [], seen = {};
+  (Array.isArray(items) ? items : []).forEach(function (it) {
+    if (out.length >= 3) return;
+    var book = gbook(it && it.book);
+    if (!book || !G[book]) return;
+    var chapters = G[book].chapters, ch = Number(it && it.ch);
+    if (!Number.isInteger(ch) || ch < 1 || ch > chapters.length) return;
+    var verses = chapters[ch - 1], from = Number(it && it.from);
+    if (!Number.isInteger(from) || from < 1 || from > verses.length) return;
+    var to = Number(it && it.to);
+    if (!Number.isInteger(to) || to < from) to = from;
+    to = Math.min(to, verses.length, from + 6);
+    var key = book + ' ' + ch + ':' + from;
+    if (seen[key]) return;
+    seen[key] = 1;
+    out.push({
+      ref: book + ' ' + ch + ':' + from + (to > from ? '–' + to : ''),
+      text: verses.slice(from - 1, to).join(' '),
+      note: String((it && it.note) || '').replace(/\s+/g, ' ').trim().slice(0, 80)
+    });
+  });
+  return out;
+}
 function hint() {
   if (busy) return;
   var st = step();
@@ -758,6 +809,21 @@ function hint() {
     ai('suggest', { answers: fullHistory().length ? fullHistory() : feelTalk0() }).then(function (r) {
       showSug(validRefs((parseJson(r.text) || {}).items));
     }).catch(function () { showSug([]); });
+    return;
+  }
+
+  // Шаг про Иисуса: ищем места в Евангелиях, где Иисус переживал похожее (по ответам «Как дела»)
+  if (st.gospel) {
+    if (!aiOn() || !window.GOSPELS) { note = 'Помощник сейчас недоступен. Ответь своими словами или просто иди дальше.'; return render(); }
+    busy = 'hint'; render();
+    ai('gospel', { answers: feelTalk0() }).then(function (r) {
+      busy = null;
+      var j = parseJson(r.text) || {};
+      var items = resolveGospel(j.items);
+      if (!items.length) { note = 'Не нашлось подходящих мест. Можно ответить своими словами и идти дальше.'; return render(); }
+      S.gospel = { lead: String(j.lead || '').replace(/\s+/g, ' ').trim().slice(0, 300), items: items };
+      render();
+    }).catch(function () { busy = null; note = 'Помощник сейчас недоступен. Ответь своими словами или просто иди дальше.'; render(); });
     return;
   }
 
@@ -815,10 +881,17 @@ function record() {
       return;
     }
     var a = S.answers[st.id];
-    if (!a) return;
-    lines.push(st.title, a);
-    if (st.kind === 'feel') S.fu.forEach(function (x) { lines.push('', x.q, x.a); });
-    if (st.kind === 'psalm' && S.ref) lines.push('(' + refLabel(S.ref) + ')');
+    if (!a && !(st.gospel && S.gospel)) return;
+    if (a) {
+      lines.push(st.title, a);
+      if (st.kind === 'feel') S.fu.forEach(function (x) { lines.push('', x.q, x.a); });
+      if (st.kind === 'psalm' && S.ref) lines.push('(' + refLabel(S.ref) + ')');
+    }
+    if (st.gospel && S.gospel) {
+      if (!a) lines.push(st.title);
+      if (S.gospel.lead) lines.push('', S.gospel.lead);
+      S.gospel.items.forEach(function (x) { lines.push('', x.ref + (x.note ? ' · ' + x.note : ''), x.text); });
+    }
     lines.push('');
   });
   return lines.join('\n').trim();
@@ -923,8 +996,8 @@ $app.addEventListener('input', function (ev) {
     if (!busy) {
       var hb = document.getElementById('hintbtn');
       if (hb) {
-        var sp = hb.querySelector('span'), k = step().kind, has = t.value.trim();
-        if (sp) sp.textContent = has ? (k === 'psalm' ? 'Подскажи, на что похоже' : k === 'ask' ? 'Посмотреть глубже' : step().hintLabel) : step().hintLabel;
+        var sp = hb.querySelector('span'), stp = step(), has = t.value.trim();
+        if (sp) sp.textContent = (has && !stp.gospel) ? (stp.kind === 'psalm' ? 'Подскажи, на что похоже' : stp.kind === 'ask' ? 'Посмотреть глубже' : stp.hintLabel) : stp.hintLabel;
       }
     }
   } else if (t.id === 'code') {

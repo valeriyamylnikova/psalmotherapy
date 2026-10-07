@@ -755,7 +755,7 @@ function hint() {
     };
     if (!aiOn() || !PS.length) return showSug([]);
     busy = 'hint'; render();
-    ai('suggest', { answers: feelTalk0() }).then(function (r) {
+    ai('suggest', { answers: fullHistory().length ? fullHistory() : feelTalk0() }).then(function (r) {
       showSug(validRefs((parseJson(r.text) || {}).items));
     }).catch(function () { showSug([]); });
     return;
@@ -763,7 +763,7 @@ function hint() {
 
   if (!aiOn()) { note = 'Помощник сейчас недоступен. Ответь своими словами или просто иди дальше.'; return render(); }
   busy = 'hint'; render();
-  ai('hint', { step: st.hint, passage: passageData(), answer: (ta ? ta.value : draft()).trim() }).then(function (r) {
+  ai('hint', { step: st.hint, passage: passageData(), answer: (ta ? ta.value : draft()).trim(), history: fullHistory() }).then(function (r) {
     busy = null;
     var t = String(r.text || '').replace(/\*\*|__|`/g, '').replace(/^\s*#+\s*/gm, '').trim().slice(0, 1200);
     if (/[A-Za-zА-Яа-яЁё]/.test(t)) S.hints[st.id] = t; else note = 'Помощник не ответил. Ответь своими словами или просто иди дальше.';
@@ -776,6 +776,24 @@ function feelTalk0() {
   var first = ex().steps.filter(function (s) { return s.kind === 'feel'; })[0];
   var list = S.answers.feel ? [{ q: first ? first.title : 'Как дела?', a: S.answers.feel }].concat(S.fu) : [];
   return list.length ? list : [{ q: 'Как дела?', a: 'не знаю, с чего начать' }];
+}
+// Весь путь человека с начала упражнения до текущего шага — чтобы помощник
+// держал в голове всё: и «как дела», и выбранный псалом, и прошлые ответы.
+function fullHistory() {
+  var out = [], steps = ex().steps;
+  for (var i = 0; i < S.step; i++) {
+    var st = steps[i];
+    if (st.kind === 'feel') {
+      if (S.answers.feel) out.push({ q: st.title, a: S.answers.feel });
+      (S.fu || []).forEach(function (x) { out.push({ q: x.q, a: x.a }); });
+    } else if (st.kind === 'psalm') {
+      if (S.ref) out.push({ q: st.title, a: refLabel(S.ref) + ' — ' + refText(S.ref) });
+      else if (S.answers.psalm) out.push({ q: st.title, a: S.answers.psalm });
+    } else if (S.answers[st.id]) {
+      out.push({ q: st.title, a: S.answers[st.id] });
+    }
+  }
+  return out;
 }
 
 function rollIdeas() {
